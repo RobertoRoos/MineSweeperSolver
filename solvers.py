@@ -19,10 +19,10 @@ class MineSweeperSolverBase(ABC):
         self._field: List[List[Optional[int]]] = [[None] * self._width for _ in range(self._height)]
 
     @abstractmethod
-    def get_next_sweep(self) -> Tuple[int, int]:
+    def get_next_sweep(self) -> Dict[str, int]:
         """Implement this method to find the next sweep option.
         
-        :return: (Row, Column)
+        :return: {"row": Row, "column": Column}
         """
         pass
 
@@ -61,3 +61,15 @@ class MineSweeperSolverRandom(MineSweeperSolverBase):
         column = random_index % self._width
         row = random_index // self._width
         return {"row": row, "column": column}
+
+
+class MineSweeperSolverSimple(MineSweeperSolverBase):
+    """Sort of clever solver, without fancy stuff."""
+
+    def get_next_sweep(self) -> Dict[str, int]:
+
+        if all(cell is None for row in self._field for cell in row):
+            # Very first statement, just pick the center thingy
+            return {"row": self._height // 2, "column": self._width // 2}
+
+        return {"row": 0, "column": 0}

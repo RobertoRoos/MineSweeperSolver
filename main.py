@@ -1,5 +1,5 @@
 from minefield import MineField, BEGINNER_FIELD, INTERMEDIATE_FIELD, EXPERT_FIELD
-from solvers import MineSweeperSolverRandom
+from solvers import MineSweeperSolverRandom, MineSweeperSolverSimple
 
 
 def main():
@@ -7,7 +7,8 @@ def main():
 
     field.sweep_cell(4, 4)
 
-    solver = MineSweeperSolverRandom(**BEGINNER_FIELD)
+    # solver = MineSweeperSolverRandom(**BEGINNER_FIELD)
+    solver = MineSweeperSolverSimple(**BEGINNER_FIELD)
 
     for i in range(100):
 
