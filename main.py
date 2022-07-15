@@ -10,7 +10,7 @@ def main():
     # solver = MineSweeperSolverRandom(**BEGINNER_FIELD)
     solver = MineSweeperSolverSimple(**BEGINNER_FIELD)
 
-    for i in range(100):
+    for i in range(field.height * field.width - field.number_of_mines):
 
         step = solver.get_next_sweep()
         result = field.sweep_cell(**step)
