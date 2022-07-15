@@ -1,5 +1,12 @@
 from DecodeDemcon3.mineField import MineField as BaseMineField
-from DecodeDemcon3.mineField import CellStatus, BEGINNER_FIELD, INTERMEDIATE_FIELD, EXPERT_FIELD
+from DecodeDemcon3.mineField import (
+    CellStatus,
+    ExplosionException,
+    BEGINNER_FIELD,
+    INTERMEDIATE_FIELD,
+    EXPERT_FIELD,
+)
+from typing import Dict
 
 
 class MineField(BaseMineField):
@@ -19,6 +26,14 @@ class MineField(BaseMineField):
     @property
     def number_of_mines(self) -> int:
         return self.__number_of_mines
+
+    @property
+    def info(self) -> Dict:
+        return {
+            "width": self.__width,
+            "height": self.__height,
+            "number_of_mines": self.__number_of_mines,
+        }
 
     @property
     def field(self):

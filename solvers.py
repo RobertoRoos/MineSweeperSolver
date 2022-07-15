@@ -17,14 +17,16 @@ class MineSweeperSolverBase(ABC):
         self._height = height
         self._number_of_mines = number_of_mines
 
-        self._field: List[List[Optional[int]]] = [[None] * self._width for _ in range(self._height)]
+        self._field: List[List[Optional[int]]] = [
+            [None] * self._width for _ in range(self._height)
+        ]
 
         self._sweeps = 0
 
     @abstractmethod
     def get_next_sweep(self) -> Dict[str, int]:
         """Implement this method to find the next sweep option.
-        
+
         :return: {"row": Row, "column": Column}
         """
         pass
@@ -140,7 +142,16 @@ class MineSweeperSolverSimple(MineSweeperSolverBase):
 
         coords = []
 
-        for offset in [(-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1)]:
+        for offset in [
+            (-1, 0),
+            (-1, 1),
+            (0, 1),
+            (1, 1),
+            (1, 0),
+            (1, -1),
+            (0, -1),
+            (-1, -1),
+        ]:
 
             row_i = row + offset[0]
             col_i = column + offset[1]
