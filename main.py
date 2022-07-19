@@ -9,14 +9,14 @@ from solvers import MineSweeperSolverRandom, MineSweeperSolverSimple
 
 
 def main():
-    field = MineField(**BEGINNER_FIELD)
+    field = MineField(**INTERMEDIATE_FIELD)
 
     field.sweep_cell(4, 4)
 
     # solver = MineSweeperSolverRandom(**field.info)
     solver = MineSweeperSolverSimple(**field.info)
 
-    for i in range(field.height * field.width - field.number_of_mines):
+    while not solver.is_done():
 
         step = solver.get_next_sweep()
 
@@ -24,7 +24,7 @@ def main():
             result = field.sweep_cell(**step)
             solver.update(**step, result=result)
         except ExplosionException:
-            print("BOOM!")
+            print("Solver failed, triggered a bomb...")
             break
         finally:
             print(step)

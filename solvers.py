@@ -46,10 +46,10 @@ class MineSweeperSolverBase(ABC):
     def print(self):
         """Print the current field and the estimation."""
 
-        for row in range(self._width):
+        for row in range(self._height):
 
             line = ""
-            for col in range(self._height):
+            for col in range(self._width):
                 cell = self._field[row][col]
                 if cell is None:
                     line += "- "
@@ -58,6 +58,13 @@ class MineSweeperSolverBase(ABC):
                 else:
                     line += str(cell) + " "
             print(line)
+
+    def is_done(self):
+        """
+
+        :return: True if there are no unknown squares left
+        """
+        return all(cell is not None for row in self._field for cell in row)
 
 
 class MineSweeperSolverRandom(MineSweeperSolverBase):
@@ -73,11 +80,32 @@ class MineSweeperSolverRandom(MineSweeperSolverBase):
 class MineSweeperSolverSimple(MineSweeperSolverBase):
     """Sort of clever solver, without fancy stuff."""
 
+    OFFSETS = [
+        (-1, 0),
+        (-1, 1),
+        (0, 1),
+        (1, 1),
+        (1, 0),
+        (1, -1),
+        (0, -1),
+        (-1, -1),
+    ]
+
+    def __init__(self, *, width: int, height: int, number_of_mines: int):
+        super().__init__(width=width, height=height, number_of_mines=number_of_mines)
+
+        self._circle_offset = 0  # Switch the random direction each time
+
     def get_next_sweep(self) -> Dict[str, int]:
 
-        # Very first statement, just pick the center thingy
+        # Very first statement, just pick the corner
         if self._sweeps == 0:
-            return {"row": self._height // 2, "column": self._width // 2}
+            return {"row": 0, "column": 0}
+
+        #
+        # Loop over all cells - for each cell, check the adjacent cells and consider if all surrounding
+        # bombs have been found. If so, pick the first adjacent cell that is not a bomb.
+        #
 
         for row in range(self._height):
             for col in range(self._width):
@@ -92,17 +120,34 @@ class MineSweeperSolverSimple(MineSweeperSolverBase):
                     continue  # Nothing to click on at all
 
                 known_adjacent_mines = self._get_adjacent_bombs(row, col)
-                if len(known_adjacent_mines) >= cell:
+                if len(known_adjacent_mines) == cell:
                     # We identified all the mines around this square, so we could click any unknown square
-                    # (there should never be more identified mines than `cell`)
+                    # (there should never be more identified mines than the cell value)
                     return unknown_adjacents[0]  # Just return the first in the list
+                if len(known_adjacent_mines) > cell:
+                    raise Exception(
+                        "Detected more mines than cell dictated, solver failed"
+                    )
 
-        # Just click the first unknown square
+        # The above failed - looks like there is no certain sweep to be made. Just click one
+        # next to a known cell then.
+
+        first_unknown = None
+
+        # Find the first neighbour of the first known cell:
         for row in range(self._height):
             for col in range(self._width):
                 cell = self._get_cell(row, col)
                 if cell is None:
-                    return {"row": row, "column": col}
+                    first_unknown = {"row": row, "column": col}
+                elif cell > 0:
+                    coords = self._get_adjacent_unknown(row, col)
+                    if coords:
+                        return coords[0]
+
+        # Okay, then just use the first unknown square we found
+        if first_unknown:
+            return first_unknown
 
         raise Exception("No unknown squares left")
 
@@ -113,6 +158,8 @@ class MineSweeperSolverSimple(MineSweeperSolverBase):
         #
         # Update our estimation of where any mines are for certain
         #
+
+        # TODO: Optimize
 
         for row in range(self._height):
             for col in range(self._width):
@@ -125,11 +172,15 @@ class MineSweeperSolverSimple(MineSweeperSolverBase):
                 unknown_adjacents = self._get_adjacent_unknown(row, col)
                 known_adjacent_mines = self._get_adjacent_bombs(row, col)
 
-                if len(unknown_adjacents) <= cell - len(known_adjacent_mines):
+                if len(unknown_adjacents) == cell - len(known_adjacent_mines):
                     # If there are as many unknown neighbours as remaining mines, they are all mines
                     # (there should never be less unknown neighbours than remaining bombs)
                     for coord in unknown_adjacents:
                         self._set_cell(**coord, value=self.BOMB)
+                elif len(unknown_adjacents) < cell - len(known_adjacent_mines):
+                    raise Exception(
+                        "Detected more mines than cell dictated, solver failed"
+                    )
 
     def _get_cell(self, row: int, column: int) -> int:
         return self._field[row][column]
@@ -138,32 +189,30 @@ class MineSweeperSolverSimple(MineSweeperSolverBase):
         self._field[row][column] = value
 
     def _get_adjacent_squares(self, row, column) -> List[Dict[str, int]]:
-        """Get the coordinates of the adjacent squares."""
+        """Get the coordinates of the adjacent squares.
 
+        We keep rotating the preferred direction of adjacent cells to keep sweeps grouped together.
+        """
         coords = []
 
-        for offset in [
-            (-1, 0),
-            (-1, 1),
-            (0, 1),
-            (1, 1),
-            (1, 0),
-            (1, -1),
-            (0, -1),
-            (-1, -1),
-        ]:
+        for i in range(len(self.OFFSETS)):
 
-            row_i = row + offset[0]
-            col_i = column + offset[1]
+            i = (i + self._circle_offset) % len(self.OFFSETS)
+
+            row_i = row + self.OFFSETS[i][0]
+            col_i = column + self.OFFSETS[i][1]
 
             if row_i < 0 or row_i >= self._height or col_i < 0 or col_i >= self._width:
                 continue
 
             coords.append({"row": row_i, "column": col_i})
 
+        self._circle_offset = (self._circle_offset + 1) % len(self.OFFSETS)
+
         return coords
 
     def _get_adjacent_where(self, row, column, value) -> List[Dict[str, int]]:
+        """Get neighbouring cells with a specific value only"""
 
         coords = []
         for coord in self._get_adjacent_squares(row, column):

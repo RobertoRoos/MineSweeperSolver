@@ -1,6 +1,12 @@
 import unittest
 from solvers import MineSweeperSolverSimple
-from minefield import MineField, BEGINNER_FIELD
+from minefield import (
+    MineField,
+    BEGINNER_FIELD,
+    INTERMEDIATE_FIELD,
+    EXPERT_FIELD,
+    ExplosionException,
+)
 
 
 class TestSimpleSolver(unittest.TestCase):
@@ -49,6 +55,52 @@ class TestSimpleSolver(unittest.TestCase):
 
         self.solver.print()
         self.assertEqual(5, len(steps))
+
+    def test_no_perfect_option(self):
+        """Test what happens when there is no good next option."""
+
+        # Insert 1 in empty field
+        self.solver.update(3, 3, 1)
+
+        step = self.solver.get_next_sweep()
+
+        # self.solver.print()
+
+        self.assertTrue(2 <= step["row"] <= 4)
+        self.assertTrue(2 <= step["column"] <= 4)
+
+    def test_game(self):
+        """Just run it full on some fields, a lot."""
+
+        N = 100  # Repetitions
+        succeeds = 0
+
+        for _ in range(N):
+            field = MineField(**INTERMEDIATE_FIELD)
+            solver = MineSweeperSolverSimple(**field.info)
+
+            succeeded = True
+
+            while not solver.is_done():
+
+                step = solver.get_next_sweep()
+
+                try:
+                    result = field.sweep_cell(**step)
+                    solver.update(**step, result=result)
+                except ExplosionException:
+                    # print(step)
+                    # solver.print()
+                    succeeded = False
+                    break
+
+            if succeeded:
+                succeeds += 1
+
+        ratio = float(succeeds) / N
+        print("Solver success ratio:", ratio)
+
+        self.assertGreater(ratio, 0.5)
 
 
 if __name__ == "__main__":
