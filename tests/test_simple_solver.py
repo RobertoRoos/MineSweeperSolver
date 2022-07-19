@@ -25,14 +25,14 @@ class TestSimpleSolver(unittest.TestCase):
         """Test how a zero is surrounded."""
 
         # Insert 0 cell
-        self.solver.update(3, 3, 0)
+        self.solver.update((3, 3), 0)
 
         steps = set()
 
         for i in range(8):
             step = self.solver.get_next_sweep()
-            self.solver.update(**step, result=1)  # Put back mock result
-            steps.add((step["row"], step["column"]))
+            self.solver.update(step, result=1)  # Put back mock result
+            steps.add(step)
 
         # self.solver.print()
         self.assertEqual(8, len(steps))
@@ -41,33 +41,33 @@ class TestSimpleSolver(unittest.TestCase):
         """Test how un-mined squares are found."""
 
         # Insert 3, surrounded by mines
-        self.solver.update(3, 3, 3)
-        self.solver.update(4, 2, self.solver.BOMB)
-        self.solver.update(4, 3, self.solver.BOMB)
-        self.solver.update(4, 4, self.solver.BOMB)
+        self.solver.update((3, 3), 3)
+        self.solver.update((4, 2), self.solver.BOMB)
+        self.solver.update((4, 3), self.solver.BOMB)
+        self.solver.update((4, 4), self.solver.BOMB)
 
         steps = set()
 
         for i in range(5):
             step = self.solver.get_next_sweep()
-            self.solver.update(**step, result=1)  # Put back mock result
-            steps.add((step["row"], step["column"]))
+            self.solver.update(step, result=2)  # Put back mock result
+            steps.add(step)
 
-        self.solver.print()
+        # self.solver.print()
         self.assertEqual(5, len(steps))
 
     def test_no_perfect_option(self):
         """Test what happens when there is no good next option."""
 
         # Insert 1 in empty field
-        self.solver.update(3, 3, 1)
+        self.solver.update((3, 3), 1)
 
         step = self.solver.get_next_sweep()
 
         # self.solver.print()
 
-        self.assertTrue(2 <= step["row"] <= 4)
-        self.assertTrue(2 <= step["column"] <= 4)
+        self.assertTrue(2 <= step[0] <= 4)
+        self.assertTrue(2 <= step[1] <= 4)
 
     def test_game(self):
         """Just run it full on some fields, a lot."""
@@ -76,7 +76,7 @@ class TestSimpleSolver(unittest.TestCase):
         succeeds = 0
 
         for _ in range(N):
-            field = MineField(**INTERMEDIATE_FIELD)
+            field = MineField(**BEGINNER_FIELD)
             solver = MineSweeperSolverSimple(**field.info)
 
             succeeded = True
@@ -86,8 +86,8 @@ class TestSimpleSolver(unittest.TestCase):
                 step = solver.get_next_sweep()
 
                 try:
-                    result = field.sweep_cell(**step)
-                    solver.update(**step, result=result)
+                    result = field.sweep_cell(column=step[1], row=step[0])
+                    solver.update(step, result=result)
                 except ExplosionException:
                     # print(step)
                     # solver.print()

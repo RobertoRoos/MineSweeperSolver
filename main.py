@@ -9,9 +9,7 @@ from solvers import MineSweeperSolverRandom, MineSweeperSolverSimple
 
 
 def main():
-    field = MineField(**INTERMEDIATE_FIELD)
-
-    field.sweep_cell(4, 4)
+    field = MineField(**BEGINNER_FIELD)
 
     # solver = MineSweeperSolverRandom(**field.info)
     solver = MineSweeperSolverSimple(**field.info)
@@ -21,14 +19,17 @@ def main():
         step = solver.get_next_sweep()
 
         try:
-            result = field.sweep_cell(**step)
-            solver.update(**step, result=result)
+            result = field.sweep_cell(column=step[1], row=step[0])
+            solver.update(step, result=result)
         except ExplosionException:
             print("Solver failed, triggered a bomb...")
             break
         finally:
             print(step)
             solver.print()
+
+    if solver.is_done():
+        print("Solved!")
 
 
 if __name__ == "__main__":
